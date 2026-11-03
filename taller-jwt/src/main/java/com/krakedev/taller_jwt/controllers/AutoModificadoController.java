@@ -18,13 +18,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 import com.krakedev.taller_jwt.entidades.AutoModificado;
 import com.krakedev.taller_jwt.repositories.AutoModificadoRepository;
 
 @RestController
 @RequestMapping("/auth/autos-modificados")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5175")
 public class AutoModificadoController {
 
     private final AutoModificadoRepository autoRepository;
@@ -107,6 +108,44 @@ public class AutoModificadoController {
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al actualizar el automovil: " + e.getMessage());
+        }
+    }
+    
+ // CONSULTAR FOTOGRAFÍA POR ID
+    @GetMapping("/{id}/foto")
+    public ResponseEntity<?> obtenerFoto(@PathVariable Integer id) {
+
+        try {
+
+            AutoModificado auto = autoRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Automóvil no encontrado"));
+
+            if (auto.getFoto() == null || auto.getFoto().length == 0) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("El automóvil no tiene una fotografía registrada");
+            }
+
+            MediaType tipoImagen;
+
+            if (auto.getMimeType() != null && !auto.getMimeType().isBlank()) {
+                tipoImagen = MediaType.parseMediaType(auto.getMimeType());
+            } else {
+                tipoImagen = MediaType.APPLICATION_OCTET_STREAM;
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(tipoImagen)
+                    .body(auto.getFoto());
+
+        } catch (RuntimeException e) {
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
+
+        } catch (Exception e) {
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al consultar la fotografía: " + e.getMessage());
         }
     }
     
